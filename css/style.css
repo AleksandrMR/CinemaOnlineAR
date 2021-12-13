@@ -126,6 +126,7 @@ grid-template: auto 1fr auto auto / 1fr;
   object-fit: cover;
   display: block;
   border-radius: 10px 10px 0 0;
+  background-color: #64588d;
 }
 
 /*
