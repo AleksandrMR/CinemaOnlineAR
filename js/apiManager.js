@@ -160,6 +160,7 @@ function removeAll() {
 }
 
 function showFilmList(filmsArray) {
+    console.log(filmsArray);
     for (let i = 0; i < filmsArray.length; i++) {
         let poster = filmsArray[i].Poster;
         let filmTitle = filmsArray[i].Title;
@@ -272,7 +273,9 @@ function sortedByReleaseDate() {
     removeClass(boxOfficeButton, checkButtonClass);
     addClass(releaseDateButton, checkButtonClass);
     removeAll();
-    showFilmList(myFilmList.sort(sortedByField(releaseField)));
+    showFilmList(myFilmList.sort(function(a,b) {
+        return new Date(b.Released).getTime() - new Date(a.Released).getTime()
+    }));
 }
 
 function sortedByBoxOffice() {
@@ -280,5 +283,7 @@ function sortedByBoxOffice() {
     removeClass(ratingButton, checkButtonClass);
     addClass(boxOfficeButton, checkButtonClass);
     removeAll();
-    showFilmList(myFilmList.sort(sortedByField(budgetField)));
+    showFilmList(myFilmList.sort(function(a,b) {
+        return b.BoxOffice.replace(/\D/g,'') - a.BoxOffice.replace(/\D/g,'')
+    }));
 }
