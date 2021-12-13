@@ -21,10 +21,10 @@ const button = "button";
 const img = "img";
 
 // ID of Elements
-const filmCardId = "filmCardContainer";
+const filmListContainer = "filmList";
+const footerButton = "footerButton";
 
 // Classes of Elements
-const filmContainer = "film-list";
 const filmCardClass = "card";
 const imageContainerClass = "card__header card-header";
 const imageClass = "card-header__image";
@@ -38,20 +38,17 @@ const releaseDateBoxClass = "film-info film-info__release-date";
 const budgetBoxClass = "film-info film-info__box-office";
 const plotBoxClass = "film-info film-info__plot";
 const cardFooterClass = "card__footer";
-const footerButtonClass = "card__button button button__icon button_add";
-const buttonImageClass = "button__icon-svg svg-inline--fa fa-plus fa-w-14";
 
-function createElement(elementClass, tagName, elementContext, idElement) {
+function createElement(elementClass, tagName, elementContext) {
     let element = document.createElement(`${tagName}`);
-    element.id = idElement;
-    element.className = `${elementClass}`
+    element.className = `${elementClass}`;
     element.textContent = `${elementContext}`;
     return element
 }
 
 function createImage(imageClass, imageSrc) {
     let image = document.createElement(img);
-    image.className = `${imageClass}`
+    image.className = `${imageClass}`;
     image.height = 390;
     image.width = 265;
     image.src = `${imageSrc}`;
@@ -59,33 +56,33 @@ function createImage(imageClass, imageSrc) {
 }
 
 function createCardImage(source) {
-    let cardImageContainer= createElement(imageContainerClass, div, "", "");
+    let cardImageContainer= createElement(imageContainerClass, div, "");
     cardImageContainer.append(createImage(imageClass, source));
     return cardImageContainer
 }
 
 function createFooterButton() {
-    let footerButtonTemplate = document.getElementById("footerButton");
+    let footerButtonTemplate = document.getElementById(footerButton);
     return footerButtonTemplate.content.cloneNode(true)
 }
 
 function createContainer(classes) {
-    let container = createElement(classes, div, "", "")
+    let container = createElement(classes, div, "");
     return container
 }
 
 function createCardElement(elClass, tag, source) {
-    let element = createElement(elClass, tag, source, "");
+    let element = createElement(elClass, tag, source);
     return element
 }
 
 function createBodyTitle(context) {
-    let title = createElement(bodyTitleClass, p, context, "");
+    let title = createElement(bodyTitleClass, p, context);
     return title
 }
 
 function createBodyText(context) {
-    let text = createElement(bodyTextClass, p, context, "");
+    let text = createElement(bodyTextClass, p, context);
     return text
 }
 
@@ -173,7 +170,7 @@ function showFilmList(filmsArray) {
         let plot = filmsArray[i].Plot;
 
         // Card
-        let filmCardContainer = createElement(filmCardClass, div, "", "");
+        let filmCardContainer = createElement(filmCardClass, div, "");
         filmCardContainer.append(createCardImage(poster));
         filmCardContainer.append(createCardElement(cardTitleClass, h2, filmTitle));
 
@@ -187,13 +184,26 @@ function showFilmList(filmsArray) {
 
         filmCardContainer.append(cardBody);
         filmCardContainer.append(getFooter());
-        document.getElementById("filmList").append(filmCardContainer);
+        document.getElementById(filmListContainer).append(filmCardContainer);
     }
 }
 
 auth()
 
+// Filters module
+
+const ratingField = "imdbRating";
+const releaseField = "Released";
+const budgetField = "BoxOffice";
+const checkButtonClass = "button_checked";
+const addButtonClass = "button_add";
+const removeButtonClass = "button_remove";
+
 const checkFavorite = document.getElementById("favorite");
+const ratingButton = document.getElementById("rating");
+const releaseDateButton = document.getElementById("releaseDate");
+const boxOfficeButton = document.getElementById("boxOffice");
+
 checkFavorite.addEventListener("change", function(e) {
     if (this.checked) {
         console.log(myFilmList);
@@ -206,60 +216,69 @@ checkFavorite.addEventListener("change", function(e) {
         console.log("i am not checked");
     }
 });
-
+ratingButton.addEventListener("click", sortedByRating);
+releaseDateButton.addEventListener("click", sortedByReleaseDate);
+boxOfficeButton.addEventListener("click", sortedByBoxOffice);
 document.body.addEventListener("click", handleFavorite);
+
+function addClass(element, add) {
+    if (!element.classList.contains(add)) {
+        element.classList.add(add);
+    }
+}
+
+function removeClass(element, remove) {
+    if(element.classList.contains(remove)) {
+        element.classList.remove(remove);
+    }
+}
+
 function handleFavorite(event) {
     const addFavorite = event.target.closest(".button_add");
     const removeFavorite = event.target.closest(".button_remove");
     const card = event.target.closest(".card");
 
-    const rating = event.target.closest(".ra")
-
     if (addFavorite) {
-        addFavorite.classList.remove('button_add');
-        addFavorite.classList.add('button_remove');
+        removeClass(addFavorite, addButtonClass);
+        addClass(addFavorite, removeButtonClass);
         myFavoriteFilms.push(card)
         console.log("addFavorite");
         console.log(myFavoriteFilms);
     }
 
     if (removeFavorite) {
-        removeFavorite.classList.remove('button_remove');
-        removeFavorite.classList.add('button_add');
+        removeClass(removeFavorite, removeButtonClass);
+        addClass(removeFavorite, addButtonClass);
         myFavoriteFilms = myFavoriteFilms.filter(item => item !== card);
         console.log("removeFavorite");
         console.log(myFavoriteFilms);
     }
 };
 
-const ratingButton = document.getElementById("rating");
-const releaseDateButton = document.getElementById("releaseDate");
-const boxOfficeButton = document.getElementById("boxOffice");
-ratingButton.addEventListener("click", sortedByRating);
-releaseDateButton.addEventListener("click", sortedByReleaseDate);
-boxOfficeButton.addEventListener("click", sortedByBoxOffice);
-
 function sortedByField(field) {
     return (a, b) => a[field] < b[field] ? 1 : -1;
 }
 
 function sortedByRating() {
+    removeClass(releaseDateButton, checkButtonClass);
+    removeClass(boxOfficeButton, checkButtonClass);
+    addClass(ratingButton, checkButtonClass);
     removeAll();
-    let newArray = myFilmList.sort(sortedByField("imdbRating"));
-    showFilmList(newArray);
-    console.log("Click sortedByRating");
+    showFilmList(myFilmList.sort(sortedByField(ratingField)));
 }
 
 function sortedByReleaseDate() {
+    removeClass(ratingButton, checkButtonClass);
+    removeClass(boxOfficeButton, checkButtonClass);
+    addClass(releaseDateButton, checkButtonClass);
     removeAll();
-    let newArray = myFilmList.sort(sortedByField("Released"));
-    showFilmList(newArray);
-    console.log("Click sortedByReleaseDate");
+    showFilmList(myFilmList.sort(sortedByField(releaseField)));
 }
 
 function sortedByBoxOffice() {
+    removeClass(releaseDateButton, checkButtonClass);
+    removeClass(ratingButton, checkButtonClass);
+    addClass(boxOfficeButton, checkButtonClass);
     removeAll();
-    let newArray = myFilmList.sort(sortedByField("BoxOffice"));
-    showFilmList(newArray);
-    console.log("Click sortedByBoxOffice");
+    showFilmList(myFilmList.sort(sortedByField(budgetField)));
 }
