@@ -4,7 +4,6 @@ const apiURL = "https://fe08-films.herokuapp.com";
 const authEndpoint = "/auth";
 const filmEndpoint = "/films";
 let myFilmList = [];
-let myFavoriteFilms = [];
 
 // Strings
 const ratingTitleText = "Рейтинг";
@@ -22,7 +21,6 @@ const img = "img";
 
 // ID of Elements
 const filmListContainer = "filmList";
-const footerButton = "footerButton";
 
 // Classes of Elements
 const filmCardClass = "card";
@@ -38,6 +36,18 @@ const releaseDateBoxClass = "film-info film-info__release-date";
 const budgetBoxClass = "film-info film-info__box-office";
 const plotBoxClass = "film-info film-info__plot";
 const cardFooterClass = "card__footer";
+
+function addClass(element, add) {
+    if (!element.classList.contains(add)) {
+        element.classList.add(add);
+    }
+}
+
+function removeClass(element, remove) {
+    if(element.classList.contains(remove)) {
+        element.classList.remove(remove);
+    }
+}
 
 function createElement(elementClass, tagName, elementContext) {
     let element = document.createElement(`${tagName}`);
@@ -61,9 +71,22 @@ function createCardImage(source) {
     return cardImageContainer
 }
 
-function createFooterButton() {
-    let footerButtonTemplate = document.getElementById(footerButton);
-    return footerButtonTemplate.content.cloneNode(true)
+function createFooterButton(favorite) {
+    if (favorite === true) {
+        let button = createElement("card__button button button__icon button_remove", "button", "");
+        let svg = document.getElementById("svgImg");
+        let svgClone = svg.content.cloneNode(true);
+        button.appendChild(svgClone);
+        return button
+    }
+
+    if (favorite === false) {
+        let button = createElement("card__button button button__icon button_add", "button", "");
+        let svg = document.getElementById("svgImg");
+        let svgClone = svg.content.cloneNode(true);
+        button.appendChild(svgClone);
+        return button
+    }
 }
 
 function createContainer(classes) {
@@ -125,9 +148,9 @@ function getPlot(textValue) {
     return plotBox
 }
 
-function getFooter() {
+function getFooter(isFavorite) {
     let cardFooter = createContainer(cardFooterClass);
-    cardFooter.append(createFooterButton());
+    cardFooter.append(createFooterButton(isFavorite));
     return cardFooter
 }
 
@@ -159,8 +182,7 @@ function removeAll() {
     document.querySelectorAll(".card").forEach(e => e.remove());
 }
 
-function showFilmList(filmsArray) {
-    console.log(filmsArray);
+function showFilmList(filmsArray, isFavoriteList) {
     for (let i = 0; i < filmsArray.length; i++) {
         let poster = filmsArray[i].Poster;
         let filmTitle = filmsArray[i].Title;
@@ -169,6 +191,12 @@ function showFilmList(filmsArray) {
         let director = filmsArray[i].Director;
         let budget = filmsArray[i].BoxOffice;
         let plot = filmsArray[i].Plot;
+
+        if (filmsArray[i].Favorite === undefined) {
+            filmsArray[i].Favorite = false;
+        }
+
+        let isFavorite = filmsArray[i].Favorite;
 
         // Card
         let filmCardContainer = createElement(filmCardClass, div, "");
@@ -184,8 +212,15 @@ function showFilmList(filmsArray) {
         cardBody.append( getPlot(plot));
 
         filmCardContainer.append(cardBody);
-        filmCardContainer.append(getFooter());
-        document.getElementById(filmListContainer).append(filmCardContainer);
+        filmCardContainer.append(getFooter(isFavorite));
+
+        if (isFavoriteList === true) {
+            if(isFavorite === true) {
+                document.getElementById(filmListContainer).append(filmCardContainer);
+            }
+        } else {
+            document.getElementById(filmListContainer).append(filmCardContainer);
+        }
     }
 }
 
@@ -194,26 +229,25 @@ auth()
 // Filters module
 
 const ratingField = "imdbRating";
-const releaseField = "Released";
-const budgetField = "BoxOffice";
 const checkButtonClass = "button_checked";
 const addButtonClass = "button_add";
 const removeButtonClass = "button_remove";
 
+const searchField = document.querySelector('input');
 const checkFavorite = document.getElementById("favorite");
 const ratingButton = document.getElementById("rating");
 const releaseDateButton = document.getElementById("releaseDate");
 const boxOfficeButton = document.getElementById("boxOffice");
 
+searchField.addEventListener("input", handleSearch);
 checkFavorite.addEventListener("change", function(e) {
     if (this.checked) {
-        console.log(myFilmList);
         removeAll();
-        showFilmList(myFavoriteFilms);
+        showFilmList(myFilmList, true);
         console.log("i am checked");
     } else {
         removeAll();
-        showFilmList(myFilmList);
+        showFilmList(myFilmList, false);
         console.log("i am not checked");
     }
 });
@@ -221,40 +255,94 @@ ratingButton.addEventListener("click", sortedByRating);
 releaseDateButton.addEventListener("click", sortedByReleaseDate);
 boxOfficeButton.addEventListener("click", sortedByBoxOffice);
 document.body.addEventListener("click", handleFavorite);
+searchField.value = "";
 
-function addClass(element, add) {
-    if (!element.classList.contains(add)) {
-        element.classList.add(add);
-    }
+const filterItems = (arr, query) => {
+    return arr.filter(el => el.toString().toLowerCase().indexOf(query.toString().toLowerCase()) !== -1)
 }
 
-function removeClass(element, remove) {
-    if(element.classList.contains(remove)) {
-        element.classList.remove(remove);
+// function filterFilm(array, query) {
+//     let newArray = [];
+//     for (let i = 0; i < array.length; i++) {
+//         let filmTitle = array[i].Title
+//         if (filmTitle.search(query) !== -1) {
+//             newArray.push(array[i]);
+//             console.log(newArray)
+//         }
+//     }
+//     return newArray
+// }
+
+const match = (array, s) => {
+    const p = Array.from(s).reduce((a, v, i) => `${a}[^${s.substr(i)}]*?${v}`, '');
+    const re = RegExp(p);
+    return array.filter(v => v.match(re));
+}
+
+function filterFilm(array, query) {
+    let newArray = [];
+    for (let i = 0; i < array.length; i++) {
+        let filmTitle = array[i].Title
+
+        const myInput = `${query}`;
+        const re = RegExp(myInput);
+
+        if (filmTitle.indexOf(query) !== -1) {
+            newArray.push(array[i]);
+            console.log(newArray)
+        }
     }
+    return newArray
+}
+
+function handleSearch(event) {
+    console.log(event.target.value)
+    console.log(filterFilm(myFilmList, event.target.value));
+    let array = filterFilm(myFilmList, event.target.value);
+    removeAll();
+    showFilmList(array);
 }
 
 function handleFavorite(event) {
     const addFavorite = event.target.closest(".button_add");
     const removeFavorite = event.target.closest(".button_remove");
     const card = event.target.closest(".card");
+    let favoriteFilm = {};
 
     if (addFavorite) {
         removeClass(addFavorite, addButtonClass);
         addClass(addFavorite, removeButtonClass);
-        myFavoriteFilms.push(card)
+        favoriteFilm.Poster = card.children.item(0).children.item(0).getAttribute("src");
+        favoriteFilm.Title = card.children.item(1).textContent;
+        favoriteFilm.imdbRating = card.children.item(2).children.item(0).children.item(1).textContent;
+        favoriteFilm.Released = card.children.item(2).children.item(1).children.item(1).textContent;
+        favoriteFilm.Director = card.children.item(2).children.item(2).children.item(1).textContent;
+        favoriteFilm.BoxOffice = card.children.item(2).children.item(3).children.item(1).textContent;
+        favoriteFilm.Plot = card.children.item(2).children.item(4).children.item(1).textContent;
+        favoriteFilm.Favorite = true;
+        myFilmList = myFilmList.map(obj => {
+            if (obj.Title === favoriteFilm.Title) {
+                return favoriteFilm
+            }
+            return obj
+        });
         console.log("addFavorite");
-        console.log(myFavoriteFilms);
     }
 
     if (removeFavorite) {
         removeClass(removeFavorite, removeButtonClass);
         addClass(removeFavorite, addButtonClass);
-        myFavoriteFilms = myFavoriteFilms.filter(item => item !== card);
+        myFilmList = myFilmList.map(obj => {
+            if (obj.Title === card.children.item(1).textContent) {
+                obj.Favorite = false;
+                console.log(obj);
+                return obj
+            }
+            return obj
+        });
         console.log("removeFavorite");
-        console.log(myFavoriteFilms);
     }
-};
+}
 
 function sortedByField(field) {
     return (a, b) => a[field] < b[field] ? 1 : -1;
@@ -287,3 +375,4 @@ function sortedByBoxOffice() {
         return b.BoxOffice.replace(/\D/g,'') - a.BoxOffice.replace(/\D/g,'')
     }));
 }
+
