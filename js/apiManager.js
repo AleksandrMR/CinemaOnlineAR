@@ -1,4 +1,19 @@
 
+// Classes of Elements
+const filmCardClass = "card";
+const imageContainerClass = "card__header card-header";
+const imageClass = "card-header__image";
+const cardTitleClass = "card-header__title";
+const cardBodyClass = "card__body";
+const ratingBoxClass = "film-info film-info__rating";
+const bodyTitleClass = "film-info__title";
+const bodyTextClass = "film-info__text";
+const directorBoxClass = "film-info film-info__director";
+const releaseDateBoxClass = "film-info film-info__release-date";
+const budgetBoxClass = "film-info film-info__box-office";
+const plotBoxClass = "film-info film-info__plot";
+const cardFooterClass = "card__footer";
+
 // Constants
 const apiURL = "https://fe08-films.herokuapp.com";
 const authEndpoint = "/auth";
@@ -21,21 +36,6 @@ const img = "img";
 
 // ID of Elements
 const filmListContainer = "filmList";
-
-// Classes of Elements
-const filmCardClass = "card";
-const imageContainerClass = "card__header card-header";
-const imageClass = "card-header__image";
-const cardTitleClass = "card-header__title";
-const cardBodyClass = "card__body";
-const ratingBoxClass = "film-info film-info__rating";
-const bodyTitleClass = "film-info__title";
-const bodyTextClass = "film-info__text";
-const directorBoxClass = "film-info film-info__director";
-const releaseDateBoxClass = "film-info film-info__release-date";
-const budgetBoxClass = "film-info film-info__box-office";
-const plotBoxClass = "film-info film-info__plot";
-const cardFooterClass = "card__footer";
 
 function addClass(element, add) {
     if (!element.classList.contains(add)) {
@@ -222,12 +222,14 @@ function showFilmList(filmsArray, isFavoriteList) {
             document.getElementById(filmListContainer).append(filmCardContainer);
         }
     }
+    console.log(filmsArray);
 }
 
 auth()
 
 // Filters module
 
+let isFavoriteList = false;
 const ratingField = "imdbRating";
 const checkButtonClass = "button_checked";
 const addButtonClass = "button_add";
@@ -244,10 +246,12 @@ checkFavorite.addEventListener("change", function(e) {
     if (this.checked) {
         removeAll();
         showFilmList(myFilmList, true);
+        isFavoriteList = true;
         console.log("i am checked");
     } else {
         removeAll();
         showFilmList(myFilmList, false);
+        isFavoriteList = false;
         console.log("i am not checked");
     }
 });
@@ -256,6 +260,7 @@ releaseDateButton.addEventListener("click", sortedByReleaseDate);
 boxOfficeButton.addEventListener("click", sortedByBoxOffice);
 document.body.addEventListener("click", handleFavorite);
 searchField.value = "";
+checkFavorite.checked = false;
 
 const filterItems = (arr, query) => {
     return arr.filter(el => el.toString().toLowerCase().indexOf(query.toString().toLowerCase()) !== -1)
@@ -340,6 +345,10 @@ function handleFavorite(event) {
             }
             return obj
         });
+
+        if (isFavoriteList === true) {
+            card.remove()
+        }
         console.log("removeFavorite");
     }
 }
