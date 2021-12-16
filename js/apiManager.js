@@ -1,4 +1,16 @@
 
+// module ---------------- HTML Creator -------------------------------------------------------------- //
+
+// Strings
+const ratingTitleText = "Рейтинг";
+const releaseDateTitleText = "Дата релиза";
+const directorTitleText = "Режисер";
+const budgetTitleText = "Бюджет";
+const plotTitleText = "Сюжет";
+
+// ID of Elements
+const filmListContainer = "filmList";
+
 // Classes of Elements
 const filmCardClass = "card";
 const imageContainerClass = "card__header card-header";
@@ -14,28 +26,12 @@ const budgetBoxClass = "film-info film-info__box-office";
 const plotBoxClass = "film-info film-info__plot";
 const cardFooterClass = "card__footer";
 
-// Constants
-const apiURL = "https://fe08-films.herokuapp.com";
-const authEndpoint = "/auth";
-const filmEndpoint = "/films";
-let myFilmList = [];
-
-// Strings
-const ratingTitleText = "Рейтинг";
-const releaseDateTitleText = "Дата релиза";
-const directorTitleText = "Режисер";
-const budgetTitleText = "Бюджет";
-const plotTitleText = "Сюжет";
-
 // Tag Names
 const div = "div";
 const h2 = "h2";
 const p = "p";
 const button = "button";
 const img = "img";
-
-// ID of Elements
-const filmListContainer = "filmList";
 
 function addClass(element, add) {
     if (!element.classList.contains(add)) {
@@ -154,34 +150,6 @@ function getFooter(isFavorite) {
     return cardFooter
 }
 
-function auth() {
-    return fetch(`${apiURL}${authEndpoint}`, {
-        method: "POST",
-    }).then((response) => response.json()).then(data => {
-        let tk = Object.values(data);
-        const myToken = `Beare ${tk[0]}`;
-        getFilmList(myToken);
-    });
-}
-
-function getFilmList(token) {
-    return fetch(`${apiURL}${filmEndpoint}`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            Autorization: `${token}`,
-        },
-    }).then((response) => response.json()).then(data => {
-        let filmList = data["films"];
-        myFilmList = filmList
-        showFilmList(myFilmList);
-    });
-}
-
-function removeAll() {
-    document.querySelectorAll(".card").forEach(e => e.remove());
-}
-
 function showFilmList(filmsArray, isFavoriteList) {
     for (let i = 0; i < filmsArray.length; i++) {
         let poster = filmsArray[i].Poster;
@@ -192,11 +160,15 @@ function showFilmList(filmsArray, isFavoriteList) {
         let budget = filmsArray[i].BoxOffice;
         let plot = filmsArray[i].Plot;
 
-        if (filmsArray[i].Favorite === undefined) {
+        console.log(filmsArray)
+        console.log(filmsArray[i].Favorite)
+
+        if (!filmsArray[i].Favorite) {
             filmsArray[i].Favorite = false;
         }
 
         let isFavorite = filmsArray[i].Favorite;
+        console.log(isFavorite)
 
         // Card
         let filmCardContainer = createElement(filmCardClass, div, "");
@@ -222,12 +194,55 @@ function showFilmList(filmsArray, isFavoriteList) {
             document.getElementById(filmListContainer).append(filmCardContainer);
         }
     }
-    console.log(filmsArray);
 }
 
-auth()
+// module ---------------- API Manager -------------------------------------------------------------- //
 
-// Filters module
+// Constants
+const apiURL = "https://fe08-films.herokuapp.com";
+const authEndpoint = "/auth";
+const filmEndpoint = "/films";
+let myFilmList = [];
+
+function auth() {
+    return fetch(`${apiURL}${authEndpoint}`, {
+        method: "POST",
+    }).then((response) => response.json()).then(data => {
+        let tk = Object.values(data);
+        const myToken = `Beare ${tk[0]}`;
+        getFilmList(myToken);
+    });
+}
+
+function getFilmList(token) {
+    return fetch(`${apiURL}${filmEndpoint}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Autorization: `${token}`,
+        },
+    }).then((response) => response.json()).then(data => {
+        myFilmList = data["films"]
+        localStorage.setItem("filmList", JSON.stringify(myFilmList));
+        showFilmList(myFilmList);
+    });
+}
+
+function startPoint() {
+    let films = JSON.parse(localStorage.getItem("filmList"));
+
+    if (films == []) {
+        console.log(films)
+        auth()
+    } else {
+        console.log(films)
+        showFilmList(films);
+    }
+}
+
+startPoint()
+
+// module ---------------- Filters -------------------------------------------------------------- //
 
 let isFavoriteList = false;
 const ratingField = "imdbRating";
@@ -241,58 +256,32 @@ const ratingButton = document.getElementById("rating");
 const releaseDateButton = document.getElementById("releaseDate");
 const boxOfficeButton = document.getElementById("boxOffice");
 
-searchField.addEventListener("input", handleSearch);
-checkFavorite.addEventListener("change", function(e) {
-    if (this.checked) {
-        removeAll();
-        showFilmList(myFilmList, true);
-        isFavoriteList = true;
-        console.log("i am checked");
-    } else {
-        removeAll();
-        showFilmList(myFilmList, false);
-        isFavoriteList = false;
-        console.log("i am not checked");
-    }
-});
+searchField.addEventListener("input", searchFilm);
+checkFavorite.addEventListener("change", showFavorite);
 ratingButton.addEventListener("click", sortedByRating);
 releaseDateButton.addEventListener("click", sortedByReleaseDate);
 boxOfficeButton.addEventListener("click", sortedByBoxOffice);
-document.body.addEventListener("click", handleFavorite);
+document.body.addEventListener("click", addFavorite);
 searchField.value = "";
 checkFavorite.checked = false;
 
-const filterItems = (arr, query) => {
-    return arr.filter(el => el.toString().toLowerCase().indexOf(query.toString().toLowerCase()) !== -1)
-}
+function filterFilm2(array, query) {
+    const match = (array, s) => {
+        const p = Array.from(s).reduce((a, v, i) => `${a}[^${s.substr(i)}]*?${v}`, '');
+        const re = RegExp(p);
+        return array.filter(v => v.match(re));
+    }
 
-// function filterFilm(array, query) {
-//     let newArray = [];
-//     for (let i = 0; i < array.length; i++) {
-//         let filmTitle = array[i].Title
-//         if (filmTitle.search(query) !== -1) {
-//             newArray.push(array[i]);
-//             console.log(newArray)
-//         }
-//     }
-//     return newArray
-// }
+    const filterItems = (arr, query) => {
+        return arr.filter(el => el.toString().toLowerCase().indexOf(query.toString().toLowerCase()) !== -1)
+    }
 
-const match = (array, s) => {
-    const p = Array.from(s).reduce((a, v, i) => `${a}[^${s.substr(i)}]*?${v}`, '');
-    const re = RegExp(p);
-    return array.filter(v => v.match(re));
-}
 
-function filterFilm(array, query) {
+
     let newArray = [];
     for (let i = 0; i < array.length; i++) {
         let filmTitle = array[i].Title
-
-        const myInput = `${query}`;
-        const re = RegExp(myInput);
-
-        if (filmTitle.indexOf(query) !== -1) {
+        if (filmTitle.search(query) !== -1) {
             newArray.push(array[i]);
             console.log(newArray)
         }
@@ -300,15 +289,40 @@ function filterFilm(array, query) {
     return newArray
 }
 
-function handleSearch(event) {
-    console.log(event.target.value)
-    console.log(filterFilm(myFilmList, event.target.value));
+function removeAll() {
+    document.querySelectorAll(".card").forEach(e => e.remove());
+}
+
+function filterFilm(array, query) {
+    let newArray = [];
+    for (let i = 0; i < array.length; i++) {
+        let filmTitle = array[i].Title
+        if (filmTitle.indexOf(query) !== -1) {
+            newArray.push(array[i]);
+        }
+    }
+    return newArray
+}
+
+function searchFilm(event) {
     let array = filterFilm(myFilmList, event.target.value);
     removeAll();
     showFilmList(array);
 }
 
-function handleFavorite(event) {
+function showFavorite() {
+    if (this.checked) {
+        removeAll();
+        showFilmList(myFilmList, true);
+        isFavoriteList = true;
+    } else {
+        removeAll();
+        showFilmList(myFilmList, false);
+        isFavoriteList = false;
+    }
+}
+
+function addFavorite(event) {
     const addFavorite = event.target.closest(".button_add");
     const removeFavorite = event.target.closest(".button_remove");
     const card = event.target.closest(".card");
@@ -325,12 +339,16 @@ function handleFavorite(event) {
         favoriteFilm.BoxOffice = card.children.item(2).children.item(3).children.item(1).textContent;
         favoriteFilm.Plot = card.children.item(2).children.item(4).children.item(1).textContent;
         favoriteFilm.Favorite = true;
+
         myFilmList = myFilmList.map(obj => {
             if (obj.Title === favoriteFilm.Title) {
                 return favoriteFilm
             }
             return obj
         });
+        console.log(myFilmList);
+        localStorage.clear()
+        localStorage.setItem("filmList", JSON.stringify(myFilmList));
         console.log("addFavorite");
     }
 
@@ -340,7 +358,6 @@ function handleFavorite(event) {
         myFilmList = myFilmList.map(obj => {
             if (obj.Title === card.children.item(1).textContent) {
                 obj.Favorite = false;
-                console.log(obj);
                 return obj
             }
             return obj
@@ -349,6 +366,9 @@ function handleFavorite(event) {
         if (isFavoriteList === true) {
             card.remove()
         }
+        console.log(myFilmList);
+        localStorage.clear()
+        localStorage.setItem("filmList", JSON.stringify(myFilmList));
         console.log("removeFavorite");
     }
 }
@@ -384,4 +404,3 @@ function sortedByBoxOffice() {
         return b.BoxOffice.replace(/\D/g,'') - a.BoxOffice.replace(/\D/g,'')
     }));
 }
-
