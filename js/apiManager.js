@@ -229,14 +229,20 @@ function getFilmList(token) {
 }
 
 function startPoint() {
-    let films = JSON.parse(localStorage.getItem("filmList"));
+    // localStorage.clear()
+    let films = JSON.parse(localStorage.getItem("filmList") || "[]");
 
-    if (films == []) {
-        console.log(films)
-        auth()
+    if (localStorage.getItem("filmList") !== null) {
+        if (localStorage.getItem("filmList").length > 0) {
+            console.log(films)
+            showFilmList(films);
+        } else {
+            console.log(films)
+            auth()
+        }
     } else {
         console.log(films)
-        showFilmList(films);
+        auth()
     }
 }
 
@@ -347,7 +353,7 @@ function addFavorite(event) {
             return obj
         });
         console.log(myFilmList);
-        localStorage.clear()
+        // localStorage.clear()
         localStorage.setItem("filmList", JSON.stringify(myFilmList));
         console.log("addFavorite");
     }
@@ -367,7 +373,7 @@ function addFavorite(event) {
             card.remove()
         }
         console.log(myFilmList);
-        localStorage.clear()
+        // localStorage.clear()
         localStorage.setItem("filmList", JSON.stringify(myFilmList));
         console.log("removeFavorite");
     }
