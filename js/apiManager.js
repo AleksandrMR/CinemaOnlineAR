@@ -229,7 +229,7 @@ function getFilmList(token) {
 }
 
 function startPoint() {
-    // localStorage.clear()
+    localStorage.clear()
     let films = JSON.parse(localStorage.getItem("filmList") || "[]");
 
     if (localStorage.getItem("filmList") !== null) {
@@ -256,7 +256,7 @@ const checkButtonClass = "button_checked";
 const addButtonClass = "button_add";
 const removeButtonClass = "button_remove";
 
-const searchField = document.querySelector('input');
+const searchField = document.querySelector("input");
 const checkFavorite = document.getElementById("favorite");
 const ratingButton = document.getElementById("rating");
 const releaseDateButton = document.getElementById("releaseDate");
